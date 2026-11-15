@@ -1,18 +1,37 @@
 /**
- * Herramientas que el modelo de lenguaje puede llamar.
+ * Herramientas del asistente (src/lib/chat.js).
  *
- * La idea: el modelo NO calcula números. Pide datos a estas funciones, que son
- * el mismo código que usa el resto de la app, y redacta sobre resultados reales.
- * Así no puede inventarse un porcentaje.
+ * El asistente no calcula números por su cuenta: entiende la pregunta, llama a estas
+ * funciones, que son el mismo código que usa el resto de la app, y redacta sobre
+ * resultados reales. Así no puede inventarse un porcentaje. Todo corre en el navegador.
  */
 import {
   DATA, FUELS, FUEL_ES, META, applyFilters, rate, EMPTY_FILTERS,
-  checkRange, nearest, typicalParams, MODE_RANGES, VARS, modeName,
+  checkRange, nearest, typicalParams, MODE_RANGES, VARS, fmt,
 } from './data.js';
 import { predict, blocker, BLOCK_TEXT } from './model.js';
 
 const pct = (x) => `${(x * 100).toFixed(1)} %`;
 const esFuel = (f) => FUEL_ES[f] || f;
+const tasa = (list) => (list.length ? `${pct(rate(list))} de ${list.length}` : 'sin pruebas');
+
+/**
+ * ¿El promedio global de normal vs inversa apunta al revés que la comparación con el mismo combustible?
+ * (paradoja de Simpson). Se calcula con los datos actuales, para que siga siendo cierto al reentrenar.
+ */
+export function simpson() {
+  const n = DATA.filter((r) => !r.is_inverse), i = DATA.filter((r) => r.is_inverse);
+  const global = rate(n) > rate(i) ? 'normal' : 'inversa';
+  const pares = FUELS.map((f) => [f, n.filter((r) => r.fuel === f), i.filter((r) => r.fuel === f)])
+    .filter(([, a, b]) => a.length && b.length)
+    .map(([f, a, b]) => ({ combustible: esFuel(f), normal: rate(a), inversa: rate(b), gana: rate(a) > rate(b) ? 'normal' : 'inversa' }));
+  const contra = pares.filter((x) => x.gana !== global);
+  return {
+    global: { normal: rate(n), inversa: rate(i), gana: global },
+    por_combustible: pares,
+    hay_paradoja: pares.length > 0 && contra.length > pares.length / 2,
+  };
+}
 
 /** Traduce el nombre en español que use el modelo al código interno del dataset. */
 const toFuel = (s) => {
@@ -29,6 +48,7 @@ const toMode = (s) => {
 };
 
 const rowOut = (r) => ({
+  id: r.id,
   prueba: r.tpid,
   fecha: r.date,
   combustible: esFuel(r.fuel),
@@ -70,7 +90,8 @@ export const TOOLS = [
       if (a.llama && !toMode(a.llama)) {
         return { error: `"${a.llama}" no es un tipo de llama. Solo hay normal e inversa.` };
       }
-      const f = {
+      // `filtros` = filtros ya interpretados por el asistente, en el formato del buscador.
+      const f = a.filtros ? { ...EMPTY_FILTERS, ...a.filtros } : {
         ...EMPTY_FILTERS,
         q: a.texto || '',
         fuel: toFuel(a.combustible),
@@ -83,6 +104,7 @@ export const TOOLS = [
       };
       const list = applyFilters(DATA, f);
       return {
+        filtros: f,
         pruebas_encontradas: list.length,
         tasa_ignicion: list.length ? pct(rate(list)) : 'sin pruebas',
         encendieron: list.filter((r) => r.ignite).length,
@@ -97,7 +119,7 @@ export const TOOLS = [
       'Corre el modelo entrenado sobre un escenario y devuelve la probabilidad de ignición. '
       + 'En llama normal la cámara tiene O2 y el combustible sale por el quemador. '
       + 'En llama inversa la cámara tiene combustible y el O2 sale por el quemador. '
-      + 'Si el escenario cae fuera de lo que NASA ensayó, devuelve fuera_de_rango y NO debes dar un porcentaje.',
+      + 'Si el escenario cae fuera de lo que NASA ensayó, igual da la probabilidad pero la marca como extrapolación.',
     parameters: {
       type: 'OBJECT',
       properties: {
@@ -109,6 +131,8 @@ export const TOOLS = [
         comb_quemador_L: { type: 'NUMBER', description: 'solo llama normal' },
         o2_quemador_L: { type: 'NUMBER', description: 'solo llama inversa' },
         n2_quemador_L: { type: 'NUMBER' },
+        co2_camara_pct: { type: 'NUMBER' },
+        base: { type: 'OBJECT', description: 'escenario de partida (seguimientos tipo "¿y si subo la presión?"); si falta, valores típicos de los ensayos' },
       },
       required: ['combustible', 'llama'],
     },
@@ -116,7 +140,8 @@ export const TOOLS = [
       const fuel = toFuel(a.combustible);
       if (!fuel) return { error: `No conozco el combustible "${a.combustible}". Solo hay etileno, etano, propano y butano.` };
       const inverse = toMode(a.llama) === '1' ? 1 : 0;
-      const base = typicalParams(fuel, inverse);
+      const same = a.base && a.base.fuel === fuel && a.base.inverse === inverse;
+      const base = same ? a.base : typicalParams(fuel, inverse, !inverse && a.o2_camara_pct != null ? { O2: a.o2_camara_pct / 100 } : null);
       const p = {
         ...base,
         fuel,
@@ -127,24 +152,24 @@ export const TOOLS = [
         fuelL: a.comb_quemador_L ?? base.fuelL,
         o2L: a.o2_quemador_L ?? base.o2L,
         n2L: a.n2_quemador_L ?? base.n2L,
+        CO2: a.co2_camara_pct != null ? a.co2_camara_pct / 100 : base.CO2,
       };
       const chk = checkRange(p);
       const blk = blocker(p);
       if (blk) {
-        return { resultado: 'imposible_por_fisica', probabilidad: '0 %', motivo: BLOCK_TEXT[blk] };
+        return { resultado: 'imposible_por_fisica', probabilidad: '0 %', valor: 0, motivo: BLOCK_TEXT[blk], escenario: p };
       }
-      if (chk.noData || chk.out.length) {
-        return {
-          resultado: 'fuera_de_rango',
-          probabilidad: null,
-          motivo: chk.noData ? chk.message : chk.out.map((o) => `${o.label} está fuera de lo ensayado`).join('; '),
-          instruccion: 'No des ningún porcentaje. Explica que no hay pruebas reales parecidas y sugiere acercarse al rango ensayado.',
-        };
-      }
+      const extrap = chk.noData || chk.out.length > 0;
       const near = nearest(p, 3);
+      const prob = predict(p);
       return {
-        resultado: 'ok',
-        probabilidad: pct(predict(p)),
+        resultado: extrap ? 'extrapolacion' : 'ok',
+        probabilidad: pct(prob),
+        valor: prob,
+        escenario: p,
+        fuera_de_rango: extrap
+          ? (chk.noData ? [chk.message] : chk.out.map((o) => `${o.label}: ${fmt(o.key, o.value)}, NASA ensayó de ${fmt(o.key, o.lo)} a ${fmt(o.key, o.hi)}`))
+          : undefined,
         valores_usados: {
           combustible: esFuel(fuel),
           llama: inverse ? 'inversa' : 'normal',
@@ -179,6 +204,8 @@ export const TOOLS = [
         Propane: { formula: 'C3H8', o2_por_molecula: 5.0, energia_min_ignicion_mJ: 0.25, velocidad_llama_cm_s: 37 },
         Butane: { formula: 'C4H10', o2_por_molecula: 6.5, energia_min_ignicion_mJ: 0.25, velocidad_llama_cm_s: 36 },
       };
+      const sin = FUELS.flatMap((f) => [0, 1].filter((i) => !DATA.some((r) => r.fuel === f && r.is_inverse === i))
+        .map((i) => `${esFuel(f)} en llama ${i ? 'inversa' : 'normal'}`));
       return {
         ambito: m === '' ? 'todas las pruebas' : `solo llama ${m === '1' ? 'inversa' : 'normal'}`,
         combustibles: FUELS.map((f) => {
@@ -187,10 +214,13 @@ export const TOOLS = [
             combustible: esFuel(f),
             ...quim[f],
             pruebas: s.length,
+            normal: tasa(s.filter((r) => !r.is_inverse)),
+            inversa: tasa(s.filter((r) => r.is_inverse)),
             tasa_ignicion: s.length ? pct(rate(s)) : 'sin pruebas en este ámbito',
           };
         }),
-        nota: 'El etileno solo se probó en llama inversa: no existe ninguna prueba de etileno en llama normal.',
+        paradoja: simpson(),
+        nota: sin.length ? `No hay pruebas de: ${sin.join(', ')}.` : undefined,
       };
     },
   },
@@ -242,16 +272,16 @@ export const TOOLS = [
       tasa_ignicion_global: pct(rate(DATA)),
       llama_normal: DATA.filter((r) => !r.is_inverse).length,
       llama_inversa: DATA.filter((r) => r.is_inverse).length,
-      archivos_de_origen: ['PSI-159 (mar a oct 2021)', 'PSI-10 (oct 2021 a feb 2022)'],
+      archivos_de_origen: Object.entries(META.periods).flatMap(([src, tramos]) => tramos.map(([a, b, n]) => `${src}: ${n} pruebas del ${a} al ${b}`)),
       combustibles: FUELS.map(esFuel),
+      modelo: META.model,
       calidad_del_modelo: META.cv,
       importancia_de_variables: META.importance,
+      efecto_de_cada_variable: META.effects,
       aviso: 'La validación se hizo dejando fuera cada día de pruebas completo, así que las cifras son fuera de muestra.',
     }),
   },
 ];
-
-export const DECLARATIONS = TOOLS.map(({ name, description, parameters }) => ({ name, description, parameters }));
 
 export function runTool(name, args) {
   const t = TOOLS.find((x) => x.name === name);
@@ -262,32 +292,3 @@ export function runTool(name, args) {
     return { error: `La herramienta ${name} falló: ${e.message}` };
   }
 }
-
-export const SYSTEM_PROMPT = `Eres el asistente de una app que analiza las pruebas de ignición del experimento ACME de la NASA, hechas en microgravedad a bordo de la Estación Espacial Internacional. Respondes en español, de forma clara y directa, a estudiantes sin formación en química.
-
-REGLA PRINCIPAL: nunca inventes ni calcules números de memoria. Cada cifra que digas debe venir de una herramienta que llamaste en este turno. Si una herramienta no te da el dato, di que no lo sabes. Si una herramienta devuelve "fuera_de_rango", NO des ningún porcentaje.
-
-QUÉ ES EL EXPERIMENTO
-- Una cámara cerrada se llena con una mezcla de gases a cierta presión. Un quemador suelta un chorro de gas y un encendedor intenta prender una llama.
-- Llama normal: la cámara tiene oxígeno y nitrógeno (aire), y el COMBUSTIBLE sale por el quemador. El combustible en cámara es 0 por diseño.
-- Llama inversa: la cámara tiene combustible y nitrógeno con casi nada de oxígeno, y el OXÍGENO sale por el quemador. Es el experimento al revés, para estudiar el hollín.
-- Son 483 pruebas de dos archivos de suministro de gas, PSI-159 y PSI-10, entre marzo de 2021 y febrero de 2022.
-
-LO QUE DECIDE LA IGNICIÓN, por orden de fuerza
-1. Cuántos litros salen del quemador. Es la variable más fuerte de todas. Poco gas = la chispa calienta un punto que se enfría antes de propagarse.
-2. La pureza del chorro. El nitrógeno es inerte: absorbe calor sin aportar nada y enfría la llama naciente.
-3. Lo que llena la cámara. En llama normal, más O2 ayuda. En llama inversa hay un punto dulce: demasiado combustible ahoga la mezcla.
-4. La presión, que es la palanca más débil.
-
-LOS COMBUSTIBLES
-- El etileno (C2H4) es un alqueno con doble enlace: mucho más reactivo. Necesita 0.084 mJ para encender contra 0.25 del propano, y su llama va a 58 cm/s contra 37.
-- Entre los alcanos (etano, propano, butano) la energía de ignición es casi idéntica, así que su diferencia NO es química: es que el butano necesita 6.5 moléculas de oxígeno por molécula de combustible y el etano solo 3.5.
-- El etileno solo se probó en llama inversa. No existe ninguna prueba de etileno en llama normal.
-
-ADVERTENCIAS QUE DEBES DAR CUANDO VENGAN AL CASO
-- El promedio global dice que la llama inversa enciende más (77.8 % contra 70.7 %), pero eso es la paradoja de Simpson: lo causa el etileno, que solo aparece del lado inverso. Con el mismo combustible, la llama normal encendió más en los tres casos comparables.
-- El modelo es un conjunto de árboles de decisión y no extrapola. Por debajo del mínimo ensayado devuelve siempre la misma respuesta del borde, así que ahí no sirve.
-- El modelo aprendió correlaciones de las pruebas, no física de combustión. Es una alerta de apoyo, nunca una garantía de seguridad.
-- Estas son correlaciones de un experimento diseñado, no de un barrido controlado: dicen qué pasó, no siempre por qué.
-
-ESTILO: párrafos cortos, sin encabezados grandes, sin emojis. Usa negritas solo para lo esencial. Si la pregunta no tiene nada que ver con el experimento, dilo con amabilidad y reconduce.`;

@@ -6,21 +6,23 @@ export const FUEL_ES = { Ethylene: 'Etileno', Propane: 'Propano', Butane: 'Butan
 export const FUELS = meta.fuels;
 export const modeName = (inv) => (inv ? 'Llama inversa' : 'Llama normal');
 
-/** Variables que el usuario puede mover. `scale` convierte a lo que se muestra (fracción -> %). */
 /**
+ * Variables que el usuario puede mover. `scale` convierte a lo que se muestra (fracción -> %).
+ * Los topes van más allá de lo ensayado a propósito, para explorar la tendencia del modelo;
+ * lo que NASA probó de verdad está en META.ranges y se marca con una franja bajo cada slider.
  * `modes` = en qué tipo de llama la variable existe de verdad (0 normal, 1 inversa).
  * Llama normal: la cámara tiene aire (O2 + N2) y el combustible sale por el quemador.
  * Llama inversa: la cámara tiene combustible + N2 y el O2 sale por el quemador.
  * Lo que no aplica a un modo vale 0 en todas sus pruebas reales.
  */
 export const VARS = [
-  { key: 'P', row: 'P_psia', label: 'Presión inicial', unit: 'psia', min: 4, max: 46, step: 0.1, scale: 1, dec: 1, modes: [0, 1] },
-  { key: 'O2', row: 'X_O2', label: 'O2 en cámara', unit: '%', min: 0, max: 0.42, step: 0.005, scale: 100, dec: 1, modes: [0] },
-  { key: 'CO2', row: 'X_CO2', label: 'CO2 en cámara', unit: '%', min: 0, max: 0.04, step: 0.0005, scale: 100, dec: 2, modes: [0, 1] },
-  { key: 'Xfuel', row: 'X_fuel', label: 'Combustible en cámara', unit: '%', min: 0, max: 0.66, step: 0.005, scale: 100, dec: 1, modes: [1] },
-  { key: 'o2L', row: 'O2_burner_corr_L', label: 'O2 del quemador', unit: 'L', min: 0, max: 1.5, step: 0.005, scale: 1, dec: 3, modes: [1] },
-  { key: 'n2L', row: 'N2_burner_corr_L', label: 'N2 del quemador', unit: 'L', min: 0, max: 2, step: 0.01, scale: 1, dec: 2, modes: [0, 1] },
-  { key: 'fuelL', row: 'fuel_burner_corr_L', label: 'Combustible del quemador', unit: 'L', min: 0, max: 0.25, step: 0.001, scale: 1, dec: 3, modes: [0] },
+  { key: 'P', row: 'P_psia', label: 'Presión inicial', unit: 'psia', min: 1, max: 100, step: 0.1, scale: 1, dec: 1, modes: [0, 1] },
+  { key: 'O2', row: 'X_O2', label: 'O2 en cámara', unit: '%', min: 0, max: 1, step: 0.005, scale: 100, dec: 1, modes: [0] },
+  { key: 'CO2', row: 'X_CO2', label: 'CO2 en cámara', unit: '%', min: 0, max: 0.15, step: 0.0005, scale: 100, dec: 2, modes: [0, 1] },
+  { key: 'Xfuel', row: 'X_fuel', label: 'Combustible en cámara', unit: '%', min: 0, max: 1, step: 0.005, scale: 100, dec: 1, modes: [1] },
+  { key: 'o2L', row: 'O2_burner_corr_L', label: 'O2 del quemador', unit: 'L', min: 0, max: 5, step: 0.005, scale: 1, dec: 3, modes: [1] },
+  { key: 'n2L', row: 'N2_burner_corr_L', label: 'N2 del quemador', unit: 'L', min: 0, max: 8, step: 0.01, scale: 1, dec: 2, modes: [0, 1] },
+  { key: 'fuelL', row: 'fuel_burner_corr_L', label: 'Combustible del quemador', unit: 'L', min: 0, max: 1, step: 0.001, scale: 1, dec: 3, modes: [0] },
 ];
 export const VAR = Object.fromEntries(VARS.map((v) => [v.key, v]));
 export const varsFor = (inverse) => VARS.filter((v) => v.modes.includes(inverse ? 1 : 0));

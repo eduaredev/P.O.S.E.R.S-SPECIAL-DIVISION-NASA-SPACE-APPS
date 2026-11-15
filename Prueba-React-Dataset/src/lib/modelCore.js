@@ -1,4 +1,4 @@
-// Motor del modelo (gradient boosting exportado desde scikit-learn). Funciones puras, sin React.
+// Motor del modelo (regresión logística exportada por python/train_export.py). Funciones puras, sin React.
 export const FEATURES = [
   'is_inverse', 'f_ethylene', 'f_propane', 'f_butane', 'f_ethane', 'P_psia',
   'X_O2', 'X_CO2', 'X_fuel', 'O2_burner_corr_L', 'N2_burner_corr_L', 'fuel_burner_corr_L',
@@ -7,15 +7,16 @@ export const FUELS = ['Ethylene', 'Propane', 'Butane', 'Ethane'];
 
 const sigmoid = (z) => 1 / (1 + Math.exp(-z));
 
-/** Puntaje crudo (log-odds). sklearn compara en float32: se replica con Math.fround. */
+/**
+ * Puntaje crudo (log-odds): mismas transformaciones que en el entrenamiento.
+ * Litros del quemador -> log1p(L / escala), luego se estandariza y se multiplica por su coeficiente.
+ */
 export function rawScore(model, x) {
-  let s = model.init;
-  for (const t of model.trees) {
-    let n = 0;
-    while (t.f[n] !== -2) {
-      n = Math.fround(x[t.f[n]]) <= t.t[n] ? t.l[n] : t.r[n];
-    }
-    s += model.lr * t.v[n];
+  let s = model.intercept;
+  for (let j = 0; j < x.length; j += 1) {
+    const ls = model.log_scale[j];
+    const v = ls ? Math.log1p(Math.max(0, x[j]) / ls) : x[j];
+    s += model.coef[j] * ((v - model.mean[j]) / model.scale[j]);
   }
   return s;
 }

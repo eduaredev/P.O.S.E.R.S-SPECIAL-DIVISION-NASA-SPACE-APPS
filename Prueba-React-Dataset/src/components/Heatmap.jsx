@@ -5,14 +5,18 @@ import { predict } from '../lib/model.js';
 const W = 640, H = 400, ML = 58, MR = 14, MT = 12, MB = 46, NX = 26, NY = 18;
 const PW = W - ML - MR, PH = H - MT - MB;
 
-function axisRange(key, params) {
+const tested = (key, params) => META.ranges[comboKey(params.fuel, params.inverse)]?.[VAR[key].row] ?? null;
+
+// Normal: lo ensayado + 12 %. Ampliado: una vez el ancho de lo ensayado hacia cada lado, para ver la tendencia afuera.
+function axisRange(key, params, wide) {
   const v = VAR[key];
-  const r = META.ranges[comboKey(params.fuel, params.inverse)];
+  const r = tested(key, params);
   if (!r) return [v.min, v.max];
-  const [lo, hi] = r[v.row];
+  const [lo, hi] = r;
   const span = hi - lo;
-  if (span < (v.max - v.min) * 0.02) return [v.min, v.min + (v.max - v.min) * 0.5];
-  return [Math.max(v.min, lo - span * 0.12), Math.min(v.max, hi + span * 0.12)];
+  if (span < (v.max - v.min) * 0.02) return [v.min, v.min + (v.max - v.min) * (wide ? 0.5 : 0.1)];
+  const m = wide ? 1 : 0.12;
+  return [Math.max(v.min, lo - span * m), Math.min(v.max, hi + span * m)];
 }
 
 export default function Heatmap({ params, onPick }) {
@@ -21,10 +25,12 @@ export default function Heatmap({ params, onPick }) {
   const [xKey, setX] = useState(() => defaults(params.inverse)[0]);
   const [yKey, setY] = useState(() => defaults(params.inverse)[1]);
   const [hover, setHover] = useState(null);
+  const [wide, setWide] = useState(false);
   useEffect(() => { const [a, b] = defaults(params.inverse); setX(a); setY(b); }, [params.inverse]);
 
-  const [x0, x1] = axisRange(xKey, params);
-  const [y0, y1] = axisRange(yKey, params);
+  const [x0, x1] = axisRange(xKey, params, wide);
+  const [y0, y1] = axisRange(yKey, params, wide);
+  const tx = tested(xKey, params), ty = tested(yKey, params);
   const sx = (v) => ML + ((v - x0) / (x1 - x0)) * PW;
   const sy = (v) => MT + PH - ((v - y0) / (y1 - y0)) * PH;
 
@@ -65,6 +71,9 @@ export default function Heatmap({ params, onPick }) {
             {varsFor(params.inverse).filter((v) => v.key !== xKey).map((v) => <option key={v.key} value={v.key}>{v.label}</option>)}
           </select>
         </div>
+        <label className="check">
+          <input type="checkbox" checked={wide} onChange={(e) => setWide(e.target.checked)} /> Ampliar fuera de lo ensayado
+        </label>
       </div>
 
       <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img"
@@ -80,6 +89,12 @@ export default function Heatmap({ params, onPick }) {
           ))}
         </g>
         <rect x={ML} y={MT} width={PW} height={PH} fill="none" stroke="var(--axis)" />
+        {wide && tx && ty && (() => {
+          const ax = sx(Math.max(x0, tx[0])), bx = sx(Math.min(x1, tx[1]));
+          const ay = sy(Math.min(y1, ty[1])), by = sy(Math.max(y0, ty[0]));
+          return <rect data-anchor="zona-ensayada" x={ax} y={ay} width={Math.max(2, bx - ax)} height={Math.max(2, by - ay)}
+            fill="none" stroke="var(--ink)" strokeWidth="1.5" strokeDasharray="5 4" pointerEvents="none" />;
+        })()}
         {ticks(x0, x1).map((t) => (
           <g key={`x${t}`}>
             <line x1={sx(t)} x2={sx(t)} y1={MT + PH} y2={MT + PH + 4} stroke="var(--axis)" />
@@ -119,6 +134,7 @@ export default function Heatmap({ params, onPick }) {
         <span><i className="dot yes" />encendió (real)</span>
         <span><i className="dot no" />no encendió (real)</span>
         <span><svg width="12" height="12" viewBox="0 0 12 12" style={{ verticalAlign: -2, marginRight: 6 }} aria-hidden="true"><polygon points="6,0 12,6 6,12 0,6" fill="var(--accent)" /></svg>tu escenario</span>
+        {wide && <span><svg width="18" height="10" style={{ verticalAlign: -1, marginRight: 6 }} aria-hidden="true"><rect x="1" y="1" width="16" height="8" fill="none" stroke="var(--ink)" strokeWidth="1.5" strokeDasharray="4 3" /></svg>zona que NASA ensayó</span>}
       </div>
     </section>
   );

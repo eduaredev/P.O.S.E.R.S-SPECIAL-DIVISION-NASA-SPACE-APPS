@@ -196,8 +196,6 @@ details.adv summary { cursor: pointer; font-weight: 500; font-size: 13px; color:
 .legend i { display: inline-block; vertical-align: -2px; margin-right: 6px; }
 .readline { min-height: 20px; font-size: 13px; color: var(--ink-2); margin: 4px 0 0; }
 
-.replay-top { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 12px; }
-.replay-top .field { margin: 0; }
 .kpis { display: flex; gap: 22px; flex-wrap: wrap; margin: 10px 0 0; font-size: 13px; color: var(--ink-2); }
 .kpis b { font-family: var(--font-head); font-size: 20px; color: var(--ink); margin-right: 4px; }
 .feed { list-style: none; margin: 12px 0 0; padding: 0; max-height: 190px; overflow: auto; border-top: 1px solid var(--line); }
@@ -257,21 +255,10 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 }
 .gas { color: var(--ink-3); font-size: 11.5px; }
 
-/* --- Asistente con Gemini --- */
-.seg.small button { padding: 4px 10px; font-size: 12.5px; }
-.keybox { margin-top: 10px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2, transparent); }
-.keybox label { display: block; font-size: 12.5px; color: var(--ink-2); margin-bottom: 5px; }
-.keyrow { display: flex; gap: 6px; }
-.keyrow input { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px;
-  background: var(--surface); color: var(--ink); font-family: inherit; font-size: 13px; }
+/* --- Asistente --- */
 .toolnote { margin: 6px 0 0; font-size: 11.5px; color: var(--ink-3); font-style: italic; }
-.msg.bot.pending { color: var(--ink-2); font-style: italic; }
-.keybox select { width: 100%; margin-top: 2px; padding: 6px 8px; border: 1px solid var(--line);
-  border-radius: 6px; background: var(--surface); color: var(--ink); font: inherit; font-size: 12.5px; }
-.keybox label { margin-top: 8px; }
-.keybox label:first-child { margin-top: 0; }
-.chead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.chead h2 { margin: 0; }
+.check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.check input { accent-color: var(--accent); }
 .thresh { margin: 10px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
 .thresh label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
 .thresh input[type='range'] { width: 100%; margin: 0; accent-color: var(--accent); }

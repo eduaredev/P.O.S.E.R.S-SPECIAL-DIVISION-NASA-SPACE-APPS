@@ -54,6 +54,7 @@ export default function Result({ params, threshold, onThreshold, onClamp }) {
   const chk = checkRange(params);
   const near = nearest(params, 3);
   // Fuera de lo ensayado: sin pruebas de ese combustible/llama, o algún valor fuera del rango real.
+  // Se sigue mostrando el porcentaje (es la tendencia del modelo); solo cambia el aviso.
   const extrap = !block && (chk.noData || chk.out.length > 0);
 
   const warns = [];
@@ -61,29 +62,28 @@ export default function Result({ params, threshold, onThreshold, onClamp }) {
   chk.out.forEach((o) => warns.push(`${o.label}: ${(o.value * VAR[o.key].scale).toFixed(VAR[o.key].dec)} ${VAR[o.key].unit}. NASA ensayó de ${showRange(o.key, o.lo, o.hi)}.`));
   if (!chk.noData && near.far && !chk.out.length) warns.push('Esta combinación de valores no se parece a ninguna prueba real de este caso, aunque cada valor por separado esté en rango. Tómala con cautela.');
 
-  const ls = !extrap && !block ? levers(params, p).filter((l) => l.delta < -0.005).slice(0, 4) : [];
-  const alarm = !extrap && !block && p >= threshold;
+  const ls = !block ? levers(params, p).filter((l) => l.delta < -0.005).slice(0, 4) : [];
+  const alarm = !block && p >= threshold;
 
   return (
     <section className="panel" aria-live="polite">
       <h2>Probabilidad de ignición</h2>
       <p className="hint">Si se activa el encendedor en estas condiciones, ¿qué tan probable es que haya llama?</p>
       <div className="readout">
-        <div className={`big${extrap ? ' muted' : ''}`}>{extrap ? '—' : <>{(p * 100).toFixed(0)}<small>%</small></>}</div>
+        <div className="big">{(p * 100).toFixed(0)}<small>%</small></div>
         <div>
-          {extrap ? (
-            <span className="badge" style={{ borderColor: 'var(--ink-3)' }}><Shape shape="diamond" color="var(--surface)" /> Fuera de lo ensayado</span>
-          ) : (
-            <span className="badge" style={{ borderColor: lv.color }}><Shape shape={lv.shape} color={lv.color} /> Riesgo {lv.label.toLowerCase()}</span>
+          <span className="badge" style={{ borderColor: lv.color }}><Shape shape={lv.shape} color={lv.color} /> Riesgo {lv.label.toLowerCase()}</span>
+          {extrap && (
+            <span className="badge" style={{ borderColor: 'var(--ink-3)', marginLeft: 6 }}><Shape shape="diamond" color="var(--surface)" /> Extrapolación</span>
           )}
           <p style={{ margin: '8px 0 0', color: 'var(--ink-2)', fontSize: 13 }}>
             {block ? 'Resultado fijado por una regla física, no por el modelo.'
-              : extrap ? 'Sin pruebas reales parecidas, el modelo no puede estimar esto. No se muestra un porcentaje para no dar una cifra engañosa.'
+              : extrap ? 'NASA no probó estos valores: el porcentaje es la tendencia que sigue el modelo, no un resultado respaldado por pruebas reales.'
                 : <>Modelo validado dejando fuera cada día de pruebas: AUC {META.cv['PSI-159'].auc.toFixed(2)} en PSI-159. Es una alerta de apoyo, no una garantía.</>}
           </p>
         </div>
       </div>
-      <Ladder p={extrap ? null : p} threshold={threshold} />
+      <Ladder p={p} threshold={threshold} />
       <div className="thresh">
         <label htmlFor="th">Umbral de alarma <span className="val">{(threshold * 100).toFixed(0)} %</span></label>
         <input id="th" type="range" min="0.05" max="0.95" step="0.05" value={threshold}
@@ -93,7 +93,7 @@ export default function Result({ params, threshold, onThreshold, onClamp }) {
 
       {extrap && (
         <div className="rule" role="status">
-          <b>Qué hacer.</b> Lleva los valores al rango que NASA sí probó para obtener una estimación.{' '}
+          <b>Fuera de lo ensayado.</b> Si quieres una estimación respaldada por pruebas reales, lleva los valores al rango que NASA sí probó.{' '}
           <button type="button" className="btn small" style={{ marginLeft: 6 }} onClick={onClamp}>Llevar al rango ensayado</button>
         </div>
       )}
@@ -105,7 +105,7 @@ export default function Result({ params, threshold, onThreshold, onClamp }) {
       {block && <div className="rule" role="status"><b>Regla física.</b> {BLOCK_TEXT[block]}</div>}
       {warns.length > 0 && !block && <ul className="warns">{warns.map((w) => <li key={w}>{w}</li>)}</ul>}
 
-      {near.rows.length > 0 && !extrap && (
+      {near.rows.length > 0 && (
         <>
           <h3 style={{ fontSize: 15, margin: '18px 0 6px' }}>Pruebas reales más parecidas</h3>
           <table className="levers">

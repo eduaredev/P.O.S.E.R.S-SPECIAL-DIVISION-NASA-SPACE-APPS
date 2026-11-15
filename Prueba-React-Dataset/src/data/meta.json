@@ -1,4 +1,12 @@
 {
+ "model": "Regresión logística (litros del quemador en escala logarítmica, signos fijados por la física)",
+ "signs": {
+  "X_O2": 1,
+  "O2_burner_corr_L": 1,
+  "fuel_burner_corr_L": 1,
+  "N2_burner_corr_L": -1,
+  "X_CO2": -1
+ },
  "features": [
   "is_inverse",
   "f_ethylene",
@@ -20,54 +28,68 @@
   "Ethane"
  ],
  "cv": {
-  "method": "Leave-One-Session-Out (32 sesiones)",
+  "method": "Leave-One-Session-Out (46 sesiones)",
   "all": {
-   "n": 483,
-   "ignite_rate": 0.747,
-   "accuracy": 0.847,
-   "majority_baseline": 0.747,
-   "auc": 0.911,
-   "brier": 0.109
+   "n": 697,
+   "ignite_rate": 0.793,
+   "accuracy": 0.864,
+   "majority_baseline": 0.793,
+   "auc": 0.901,
+   "brier": 0.098
   },
   "PSI-159": {
    "n": 340,
    "ignite_rate": 0.656,
    "accuracy": 0.794,
    "majority_baseline": 0.656,
-   "auc": 0.873
+   "auc": 0.85
   },
   "PSI-10": {
-   "n": 143,
-   "ignite_rate": 0.965,
-   "accuracy": 0.972,
-   "majority_baseline": 0.965,
-   "auc": 0.986
+   "n": 357,
+   "ignite_rate": 0.924,
+   "accuracy": 0.93,
+   "majority_baseline": 0.924,
+   "auc": 0.923
   },
   "normal": {
-   "n": 208,
-   "ignite_rate": 0.707,
-   "accuracy": 0.812,
-   "majority_baseline": 0.707,
-   "auc": 0.882
+   "n": 422,
+   "ignite_rate": 0.803,
+   "accuracy": 0.877,
+   "majority_baseline": 0.803,
+   "auc": 0.92
   },
   "inverse": {
    "n": 275,
    "ignite_rate": 0.778,
-   "accuracy": 0.873,
+   "accuracy": 0.844,
    "majority_baseline": 0.778,
-   "auc": 0.93
+   "auc": 0.858
   }
  },
  "importance": {
-  "is_inverse": 0.0,
-  "P_psia": 0.0485,
-  "X_O2": 0.1371,
-  "X_CO2": 0.1376,
-  "X_fuel": 0.1423,
-  "O2_burner_corr_L": 0.1357,
-  "N2_burner_corr_L": 0.1112,
-  "fuel_burner_corr_L": 0.221,
-  "fuel": 0.0665
+  "is_inverse": 0.0101,
+  "P_psia": 0.0319,
+  "X_O2": 0.0,
+  "X_CO2": 0.0,
+  "X_fuel": 0.0231,
+  "O2_burner_corr_L": 0.2644,
+  "N2_burner_corr_L": 0.0799,
+  "fuel_burner_corr_L": 0.4198,
+  "fuel": 0.1707
+ },
+ "effects": {
+  "is_inverse": 0.0805,
+  "f_ethylene": 0.5994,
+  "f_propane": -0.1462,
+  "f_butane": -0.5335,
+  "f_ethane": -0.0766,
+  "P_psia": -0.2535,
+  "X_O2": 0.0,
+  "X_CO2": 0.0,
+  "X_fuel": 0.1837,
+  "O2_burner_corr_L": 2.0997,
+  "N2_burner_corr_L": -0.6346,
+  "fuel_burner_corr_L": 3.3336
  },
  "combos": [
   {
@@ -93,6 +115,12 @@
    "is_inverse": 1,
    "n": 52,
    "ignite_rate": 0.769
+  },
+  {
+   "fuel": "Ethylene",
+   "is_inverse": 0,
+   "n": 214,
+   "ignite_rate": 0.897
   },
   {
    "fuel": "Ethylene",
@@ -234,6 +262,36 @@
     0.0
    ]
   },
+  "Ethylene|0": {
+   "P_psia": [
+    14.53,
+    28.1
+   ],
+   "X_O2": [
+    0.192904,
+    0.399166
+   ],
+   "X_CO2": [
+    0.0,
+    0.016733
+   ],
+   "X_fuel": [
+    0.0,
+    0.000467
+   ],
+   "O2_burner_corr_L": [
+    0.0,
+    0.0
+   ],
+   "N2_burner_corr_L": [
+    0.0,
+    1.207886
+   ],
+   "fuel_burner_corr_L": [
+    0.001145,
+    0.211592
+   ]
+  },
   "Ethylene|1": {
    "P_psia": [
     6.24,
@@ -325,6 +383,27 @@
    ]
   }
  },
- "n_rows": 483,
- "n_sessions": 32
+ "periods": {
+  "PSI-10": [
+   [
+    "2019-04-25",
+    "2019-07-26",
+    214
+   ],
+   [
+    "2021-10-28",
+    "2022-02-04",
+    143
+   ]
+  ],
+  "PSI-159": [
+   [
+    "2021-03-29",
+    "2021-10-19",
+    340
+   ]
+  ]
+ },
+ "n_rows": 697,
+ "n_sessions": 46
 }

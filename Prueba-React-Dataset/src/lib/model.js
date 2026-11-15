@@ -1,12 +1,12 @@
 import modelJson from '../data/model.json';
 import { predictProb } from './modelCore.js';
-import { VAR, VARS, MODE_RANGES, varsFor } from './data.js';
+import { VAR, VARS, varsFor } from './data.js';
 
 /**
  * Reglas físicas que se aplican ANTES del modelo. Sin combustible o sin oxidante no puede haber llama,
- * y el modelo (árboles de decisión) no lo sabe ni extrapola fuera de lo ensayado.
+ * pero una regresión logística nunca llega a 0 % por sí sola.
  * Umbrales validados con los datos: bloquean 5 pruebas reales y ninguna encendió; lo mínimo que sí encendió
- * (combustible quemador 0.0024 L, O2 cámara 19 %, combustible cámara 5.6 %, O2 quemador 0.027 L) queda muy por encima.
+ * (combustible quemador 0.0015 L, O2 cámara 19 %, combustible cámara 5.6 %, O2 quemador 0.027 L) queda muy por encima.
  * En llama normal el combustible entra por el quemador y en la inversa está en la cámara; por eso se miran ambos.
  */
 export const GUARD = { fuelL: 0.0005, Xfuel: 0.005, O2: 0.05, o2L: 0.001 };
@@ -28,18 +28,14 @@ export const BLOCK_TEXT = {
 };
 
 /**
- * El modelo nunca usó la bandera normal/inversa: deduce el tipo de llama por otros valores (en las pruebas reales,
- * todo O2 de cámara < 15 % es llama inversa). Por eso, antes de predecir, lo que no aplica al tipo de llama se pone en 0
- * y cada valor se limita al rango real de ese tipo de llama. Dentro de lo ensayado el resultado no cambia.
+ * Lo que no aplica al tipo de llama vale 0, como en todas las pruebas reales de ese modo
+ * (en llama normal no hay combustible en cámara; en la inversa no hay O2 en cámara ni combustible en el quemador).
+ * Los demás valores pasan tal cual, también fuera de lo ensayado: la app sirve para explorar la tendencia del modelo.
  */
 export function toModelInput(p) {
   const m = p.inverse ? 1 : 0;
   const q = { ...p };
-  VARS.forEach((v) => {
-    if (!v.modes.includes(m)) { q[v.key] = 0; return; }
-    const [lo, hi] = MODE_RANGES[m][v.key];
-    q[v.key] = Math.min(hi, Math.max(lo, p[v.key]));
-  });
+  VARS.forEach((v) => { if (!v.modes.includes(m)) q[v.key] = 0; });
   return q;
 }
 

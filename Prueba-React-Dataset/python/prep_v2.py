@@ -11,7 +11,10 @@ Cambios respecto a prep.py original (cada fila afectada queda anotada en la colu
   4. Se agrega X_H2O y t_start; se elimina X_He (es 0 en todas las filas).
   5. Valores negativos minusculos (ruido del sensor) en X_fuel y flujos se llevan a 0.
 
-Uso:  python prep_v2.py --psi10 "PSI-10_Raw Data_Final ACME.xlsx" --psi159 "PSI-159_Raw Data_Final ACME.xlsx" --out ..
+  6. --psi10 acepta varios archivos: la calculadora de PSI-10 viene partida por periodos
+     (2019-04-09 a 2019-08-13 y 2021-10-28 a 2022-02-04). Los TPID repetidos se quedan una sola vez.
+
+Uso:  python prep_v2.py --psi10 "PSI-10 2019.xlsx" "PSI-10 2021-2022.xlsx" --psi159 "PSI-159_Raw Data_Final ACME.xlsx" --out ..
 """
 import argparse
 import os
@@ -100,12 +103,13 @@ def extract(path, source_name):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--psi10', required=True)
+    ap.add_argument('--psi10', required=True, nargs='+')
     ap.add_argument('--psi159', required=True)
     ap.add_argument('--out', default='.')
     a = ap.parse_args()
 
-    df = pd.concat([extract(a.psi10, 'PSI-10'), extract(a.psi159, 'PSI-159')], ignore_index=True)
+    df = pd.concat([*(extract(f, 'PSI-10') for f in a.psi10), extract(a.psi159, 'PSI-159')], ignore_index=True)
+    df = df.drop_duplicates('tpid').reset_index(drop=True)
     df['cambio'] = ''
 
     # 1) filas MFCA -> eliminadas

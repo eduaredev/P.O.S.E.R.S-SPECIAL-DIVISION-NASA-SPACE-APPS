@@ -48,7 +48,7 @@ export default function App() {
       </div>
 
       {tab === 'monitor' ? (
-        <Monitor params={params} setParams={setParams} onLoadRow={loadRow} />
+        <Monitor params={params} setParams={setParams} />
       ) : (
         <div className="grid-explorer">
           <Explorer filters={filters} setFilters={setFilters} onLoadRow={loadRow} />
