@@ -1,6 +1,14 @@
 import { useMemo, useState } from 'react';
 import { DATA, FUELS, FUEL_ES, modeName, applyFilters, EMPTY_FILTERS, toCSV, rate } from '../lib/data.js';
 
+// En llama inversa lo que sale del quemador es oxígeno; en normal, combustible.
+// Mostrar siempre la columna de combustible escondía la variable que decide el resultado.
+const burnerL = (r) => (r.is_inverse ? r.O2_burner_corr_L : r.fuel_burner_corr_L);
+const burnerPct = (r) => {
+  const a = burnerL(r), t = a + r.N2_burner_corr_L;
+  return t > 1e-9 ? a / t : null;
+};
+
 const COLS = [
   { k: 'date', h: 'Fecha', get: (r) => r.date },
   { k: 'tpid', h: 'Prueba', get: (r) => r.tpid },
@@ -9,7 +17,16 @@ const COLS = [
   { k: 'P_psia', h: 'Presión (psia)', get: (r) => r.P_psia.toFixed(1), num: true },
   { k: 'X_O2', h: 'O2 cámara', get: (r) => `${(r.X_O2 * 100).toFixed(1)} %`, num: true },
   { k: 'X_fuel', h: 'Comb. cámara', get: (r) => `${(r.X_fuel * 100).toFixed(1)} %`, num: true },
-  { k: 'fuel_burner_corr_L', h: 'Comb. quemador (L)', get: (r) => r.fuel_burner_corr_L.toFixed(3), num: true },
+  { k: 'burner_L',
+    h: 'Sale del quemador (L)',
+    get: (r) => <>{burnerL(r).toFixed(3)} <span className="gas">{r.is_inverse ? 'O2' : 'comb.'}</span></>,
+    num: true,
+    val: burnerL },
+  { k: 'burner_pct',
+    h: 'Pureza del chorro',
+    get: (r) => { const p = burnerPct(r); return p == null ? '—' : `${(p * 100).toFixed(0)} %`; },
+    num: true,
+    val: (r) => burnerPct(r) ?? -1 },
   { k: 'ignite', h: 'Resultado', get: (r) => <><i className={`dot ${r.ignite ? 'yes' : 'no'}`} />{r.ignite ? 'Encendió' : 'No encendió'}</> },
   { k: 'prob_cv', h: 'Modelo', get: (r) => <><span className="meter"><i style={{ width: `${r.prob_cv * 100}%` }} /></span>{(r.prob_cv * 100).toFixed(0)} %</>, num: true },
 ];
@@ -23,8 +40,10 @@ export default function Explorer({ filters, setFilters, onLoadRow }) {
   const set = (patch) => { setFilters((f) => ({ ...f, ...patch })); setPage(0); };
   const rows = useMemo(() => {
     const list = applyFilters(DATA, filters);
+    const col = COLS.find((c) => c.k === sort.k);
+    const of = col?.val ?? ((r) => r[sort.k]);
     return [...list].sort((a, b) => {
-      const x = a[sort.k], y = b[sort.k];
+      const x = of(a), y = of(b);
       return (x < y ? -1 : x > y ? 1 : 0) * sort.dir || a.t_start.localeCompare(b.t_start);
     });
   }, [filters, sort]);

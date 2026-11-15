@@ -181,7 +181,11 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 .detail dd { margin: 0; font-weight: 500; }
 .note { margin-top: 8px; padding: 8px 10px; border-left: 3px solid var(--warn); background: var(--surface); font-size: 13px; }
 
-.chat { display: flex; flex-direction: column; height: 640px; position: sticky; top: 12px; padding: 0; overflow: hidden; }
+/* Alto atado a la ventana: el campo de la clave hace crecer la cabecera y si no, ahoga los mensajes. */
+.chat { display: flex; flex-direction: column; height: clamp(520px, calc(100vh - 24px), 820px);
+  position: sticky; top: 12px; padding: 0; overflow: hidden; }
+.chat header { flex: 0 0 auto; }
+.msgs { min-height: 0; }
 .chat header { padding: 14px 16px 10px; border-bottom: 1px solid var(--line); }
 .chat header p { margin: 2px 0 0; font-size: 12.5px; color: var(--ink-2); }
 .msgs { flex: 1; overflow: auto; padding: 14px 16px; display: grid; gap: 12px; align-content: start; }
@@ -205,3 +209,20 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 @media (prefers-reduced-motion: no-preference) {
   .big, .ladder .mark { transition: all 0.25s ease; }
 }
+.gas { color: var(--ink-3); font-size: 11.5px; }
+
+/* --- Asistente con Gemini --- */
+.seg.small button { padding: 4px 10px; font-size: 12.5px; }
+.keybox { margin-top: 10px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2, transparent); }
+.keybox label { display: block; font-size: 12.5px; color: var(--ink-2); margin-bottom: 5px; }
+.keyrow { display: flex; gap: 6px; }
+.keyrow input { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--surface); color: var(--ink); font-family: inherit; font-size: 13px; }
+.toolnote { margin: 6px 0 0; font-size: 11.5px; color: var(--ink-3); font-style: italic; }
+.msg.bot.pending { color: var(--ink-2); font-style: italic; }
+.keybox select { width: 100%; margin-top: 2px; padding: 6px 8px; border: 1px solid var(--line);
+  border-radius: 6px; background: var(--surface); color: var(--ink); font: inherit; font-size: 12.5px; }
+.keybox label { margin-top: 8px; }
+.keybox label:first-child { margin-top: 0; }
+.chead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.chead h2 { margin: 0; }
