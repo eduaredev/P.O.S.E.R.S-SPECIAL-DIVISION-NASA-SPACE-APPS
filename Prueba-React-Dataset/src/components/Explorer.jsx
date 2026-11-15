@@ -4,10 +4,6 @@ import { DATA, FUELS, FUEL_ES, modeName, applyFilters, EMPTY_FILTERS, toCSV, rat
 // En llama inversa lo que sale del quemador es oxígeno; en normal, combustible.
 // Mostrar siempre la columna de combustible escondía la variable que decide el resultado.
 const burnerL = (r) => (r.is_inverse ? r.O2_burner_corr_L : r.fuel_burner_corr_L);
-const burnerPct = (r) => {
-  const a = burnerL(r), t = a + r.N2_burner_corr_L;
-  return t > 1e-9 ? a / t : null;
-};
 
 const COLS = [
   { k: 'date', h: 'Fecha', get: (r) => r.date },
@@ -22,11 +18,6 @@ const COLS = [
     get: (r) => <>{burnerL(r).toFixed(3)} <span className="gas">{r.is_inverse ? 'O2' : 'comb.'}</span></>,
     num: true,
     val: burnerL },
-  { k: 'burner_pct',
-    h: 'Pureza del chorro',
-    get: (r) => { const p = burnerPct(r); return p == null ? '—' : `${(p * 100).toFixed(0)} %`; },
-    num: true,
-    val: (r) => burnerPct(r) ?? -1 },
   { k: 'ignite', h: 'Resultado', get: (r) => <><i className={`dot ${r.ignite ? 'yes' : 'no'}`} />{r.ignite ? 'Encendió' : 'No encendió'}</> },
   { k: 'prob_cv', h: 'Modelo', get: (r) => <><span className="meter"><i style={{ width: `${r.prob_cv * 100}%` }} /></span>{(r.prob_cv * 100).toFixed(0)} %</>, num: true },
 ];

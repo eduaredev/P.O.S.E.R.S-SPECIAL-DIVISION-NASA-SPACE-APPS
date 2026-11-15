@@ -47,7 +47,7 @@ const showRange = (key, lo, hi) => {
   return `${(lo * v.scale).toFixed(v.dec)} a ${(hi * v.scale).toFixed(v.dec)} ${v.unit}`;
 };
 
-export default function Result({ params, threshold, onClamp }) {
+export default function Result({ params, threshold, onThreshold, onClamp }) {
   const p = predict(params);
   const lv = levelOf(p);
   const block = blocker(params);
@@ -84,7 +84,12 @@ export default function Result({ params, threshold, onClamp }) {
         </div>
       </div>
       <Ladder p={extrap ? null : p} threshold={threshold} />
-      {!extrap && <p className="hint" style={{ margin: '2px 0 0' }}>La línea punteada es tu umbral de alarma ({(threshold * 100).toFixed(0)} %).</p>}
+      <div className="thresh">
+        <label htmlFor="th">Umbral de alarma <span className="val">{(threshold * 100).toFixed(0)} %</span></label>
+        <input id="th" type="range" min="0.05" max="0.95" step="0.05" value={threshold}
+          onChange={(e) => onThreshold(parseFloat(e.target.value))} />
+        <p className="hint tight">Es la línea punteada de la escala. Por encima de ese valor se muestra una alerta.</p>
+      </div>
 
       {extrap && (
         <div className="rule" role="status">

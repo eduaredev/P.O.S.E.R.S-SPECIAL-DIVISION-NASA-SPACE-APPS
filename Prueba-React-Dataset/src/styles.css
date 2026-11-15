@@ -1,55 +1,74 @@
 :root {
   color-scheme: light;
-  --page: #eceff2;
-  --surface: #fcfcfb;
-  --surface-2: #f3f4f1;
-  --ink: #0b0b0b;
-  --ink-2: #52514e;
-  --ink-3: #75746f;
-  --line: #dcded8;
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
-  --accent: #2a78d6;
-  --accent-soft: #e6effa;
-  --heat: #eb6834;
-  --good: #0ca30c;
-  --warn: #fab219;
-  --serious: #ec835a;
-  --crit: #d03b3b;
+  /* Regla 60/30/10: 60 % blanco (fondo y paneles), 30 % azul (cabecera, acciones,
+     datos), 10 % rojo (solo alertas y riesgo alto). El rojo nunca decora. */
+  --brand: #123f90;          /* azul Space Apps: la cabecera y la identidad */
+  --brand-ink: #ffffff;
+  --page: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #eef2f8;
+  --ink: #0e1726;
+  --ink-2: #4a5a70;
+  --ink-3: #6b7a90;
+  --line: #d9e1ec;
+  --grid: #e5ebf4;
+  --axis: #b9c6d8;
+  --accent: #2563c4;
+  --accent-soft: #e7eefb;
+  --red: #c2202c;
+  --heat: #c2202c;
+  --good: #5ea7ef;
+  --warn: #2563c4;
+  --serious: #f07478;
+  --crit: #c2202c;
   --font-head: 'Bricolage Grotesque', 'Segoe UI Variable Display', system-ui, sans-serif;
   --font-body: 'Instrument Sans', 'Segoe UI', system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --page: #121211;
-    --surface: #1a1a19;
-    --surface-2: #222220;
-    --ink: #f0efec;
-    --ink-2: #c3c2b7;
-    --ink-3: #97968d;
-    --line: #2c2c2a;
-    --grid: #2c2c2a;
-    --axis: #383835;
-    --accent: #3987e5;
-    --accent-soft: #1d2a3a;
-    --heat: #d95926;
+    --brand: #0e3273;
+    --brand-ink: #ffffff;
+    --page: #0b1220;
+    --surface: #121b2c;
+    --surface-2: #1a2639;
+    --ink: #eef2f8;
+    --ink-2: #b4c2d6;
+    --ink-3: #8595ab;
+    --line: #22304a;
+    --grid: #22304a;
+    --axis: #35456080;
+    --accent: #5ea7ef;
+    --accent-soft: #16233a;
+    --red: #e4515c;
+    --heat: #d8313d;
+    --good: #5ea7ef;
+    --warn: #2563c4;
+    --serious: #f07478;
+    --crit: #e4515c;
   }
 }
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --page: #121211;
-  --surface: #1a1a19;
-  --surface-2: #222220;
-  --ink: #f0efec;
-  --ink-2: #c3c2b7;
-  --ink-3: #97968d;
-  --line: #2c2c2a;
-  --grid: #2c2c2a;
-  --axis: #383835;
-  --accent: #3987e5;
-  --accent-soft: #1d2a3a;
-  --heat: #d95926;
+  --brand: #0e3273;
+  --brand-ink: #ffffff;
+  --page: #0b1220;
+  --surface: #121b2c;
+  --surface-2: #1a2639;
+  --ink: #eef2f8;
+  --ink-2: #b4c2d6;
+  --ink-3: #8595ab;
+  --line: #22304a;
+  --grid: #22304a;
+  --axis: #35456080;
+  --accent: #5ea7ef;
+  --accent-soft: #16233a;
+  --red: #e4515c;
+  --heat: #d8313d;
+  --good: #5ea7ef;
+  --warn: #2563c4;
+  --serious: #f07478;
+  --crit: #e4515c;
 }
 
 * { box-sizing: border-box; }
@@ -70,16 +89,42 @@ button { cursor: pointer; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 /* ---------- shell ---------- */
-.app { max-width: 1280px; margin: 0 auto; padding: 0 16px 48px; }
-.top { display: flex; align-items: center; gap: 20px; padding: 18px 0 12px; flex-wrap: wrap; }
-.brand h1 { font-size: 22px; font-weight: 700; }
-.brand p { margin: 0; color: var(--ink-2); font-size: 13px; }
-.tabs { display: flex; gap: 4px; margin-left: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
-.tab { border: 0; background: transparent; padding: 8px 16px; border-radius: 6px; font-weight: 500; color: var(--ink-2); }
-.tab[aria-selected='true'] { background: var(--accent); color: #fff; }
-.theme { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 12px; color: var(--ink-2); }
-.facts { display: flex; gap: 28px; flex-wrap: wrap; padding: 10px 0 18px; border-bottom: 1px solid var(--line); margin-bottom: 18px; color: var(--ink-2); font-size: 13px; }
-.facts b { color: var(--ink); font-family: var(--font-head); font-size: 17px; margin-right: 4px; }
+.app { padding: 0 0 48px; }
+.app > .strip, .app > .grid-monitor, .app > .grid-explorer { max-width: 1280px; margin-left: auto; margin-right: auto; padding-left: 16px; padding-right: 16px; }
+
+/* La banda azul es la única superficie de color fuerte: ahí vive el 30 % azul. */
+.topbar {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  background: var(--brand); color: var(--brand-ink);
+  padding: 12px max(16px, calc((100% - 1280px) / 2 + 16px));
+}
+.topbar .logo { flex: 0 0 auto; border-radius: 4px; }
+.topbar h1 { font-size: 19px; font-weight: 800; letter-spacing: .02em; margin: 0; color: var(--brand-ink); }
+.tabs { display: flex; gap: 4px; margin-left: auto; }
+.tab {
+  border: 0; background: transparent; padding: 8px 4px; font-weight: 500; font-size: 14.5px;
+  color: color-mix(in oklab, var(--brand-ink) 72%, transparent);
+  border-bottom: 3px solid transparent; border-radius: 0; margin: 0 8px;
+}
+.tab:hover { color: var(--brand-ink); }
+/* El rojo es el 10 %: marca lo activo y las alertas, nada más. */
+.tab[aria-selected='true'] { color: var(--brand-ink); border-bottom-color: var(--red); font-weight: 650; }
+.theme {
+  border: 1px solid color-mix(in oklab, var(--brand-ink) 40%, transparent);
+  background: transparent; border-radius: 8px; padding: 6px 11px; font-size: 12.5px;
+  color: color-mix(in oklab, var(--brand-ink) 85%, transparent);
+}
+.theme:hover { border-color: var(--brand-ink); color: var(--brand-ink); }
+.strip { padding-top: 14px; padding-bottom: 16px; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+.sub { margin: 0 0 10px; color: var(--ink-2); font-size: 13.5px; }
+.facts { display: flex; gap: 28px; flex-wrap: wrap; color: var(--ink-2); font-size: 13px; }
+.facts b { color: var(--brand); font-family: var(--font-head); font-size: 17px; margin-right: 4px; }
+@media (max-width: 720px) {
+  .topbar { gap: 10px; }
+  .topbar h1 { font-size: 16px; flex: 1 1 100%; order: 2; }
+  .tabs { margin-left: 0; order: 3; flex: 1 1 100%; }
+  .tab { margin: 0 14px 0 0; }
+}
 
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
 .panel h2 { font-size: 17px; margin-bottom: 4px; }
@@ -135,10 +180,11 @@ details.adv summary { cursor: pointer; font-weight: 500; font-size: 13px; color:
 .levers td { padding: 7px 0; border-bottom: 1px solid var(--line); vertical-align: middle; }
 .levers td:last-child { text-align: right; white-space: nowrap; }
 .delta { display: inline-block; min-width: 62px; font-weight: 600; }
-.delta.down { color: #006300; }
+/* Bajar el riesgo se marca en azul, no en verde: fuera de la paleta 60/30/10. */
+.delta.down { color: var(--brand); }
 .delta.up { color: var(--crit); }
-:root[data-theme='dark'] .delta.down { color: #0ca30c; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .delta.down { color: #0ca30c; } }
+:root[data-theme='dark'] .delta.down { color: var(--accent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .delta.down { color: var(--accent); } }
 
 /* ---------- gráficos ---------- */
 .chart { width: 100%; height: auto; display: block; }
@@ -226,3 +272,7 @@ table.data tbody tr:hover td { background: var(--surface-2); }
 .keybox label:first-child { margin-top: 0; }
 .chead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .chead h2 { margin: 0; }
+.thresh { margin: 10px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.thresh label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.thresh input[type='range'] { width: 100%; margin: 0; accent-color: var(--accent); }
+.thresh .hint { margin: 6px 0 0; }
