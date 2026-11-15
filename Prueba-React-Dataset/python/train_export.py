@@ -12,7 +12,15 @@ la probabilidad cambia de forma continua al mover un slider y sigue una tendenci
 (los arboles devuelven escalones y se quedan planos en el borde). Con los litros del quemador en escala
 logaritmica (los primeros mililitros importan mas que los ultimos) predice casi igual que el gradient boosting.
 
-Signos fijados por la fisica (SIGNS): mas O2 o mas combustible no pueden bajar la probabilidad, y el N2 o el CO2
+Llama normal e inversa son espejo: el quemador suelta un reactivo y la camara tiene el otro. Por eso el modelo
+no separa O2 y combustible, sino dos variables compartidas por los dos tipos de llama, con un solo coeficiente:
+  - chorro_O2eq_L: lo que suelta el quemador, en litros de O2 equivalente. En llama inversa son los litros de O2;
+    en la normal, los litros de combustible por el O2 que pide cada molecula (1 L de butano necesita 6.5 L de O2).
+  - reactivo_camara: el otro reactivo en la camara (fraccion de O2 en llama normal, de combustible en la inversa).
+Asi el O2 y el combustible pesan lo mismo en cada papel. Frente a tratarlos por separado, mejora la AUC
+(0.901 -> 0.909) y sobre todo en llama inversa (0.858 -> 0.880).
+
+Signos fijados por la fisica (SIGNS): mas reactivo no puede bajar la probabilidad, y el N2 o el CO2
 (inertes) no pueden subirla. Sin esto el modelo aprendia correlaciones del diseno del experimento (el CO2 se
 acumula a lo largo del dia, con O2 alto se probaban flujos mas al limite) y los sliders se movian al reves.
 Cuesta ~0.01 de AUC. Para quitar la restriccion deja SIGNS = {}.
@@ -37,15 +45,32 @@ OUT = os.path.join(ROOT, 'src', 'data')
 
 FUELS = ['Ethylene', 'Propane', 'Butane', 'Ethane']          # combustibles con datos reales de ignicion
 FEATURES = ['is_inverse', 'f_ethylene', 'f_propane', 'f_butane', 'f_ethane', 'P_psia',
-            'X_O2', 'X_CO2', 'X_fuel', 'O2_burner_corr_L', 'N2_burner_corr_L', 'fuel_burner_corr_L']
+            'X_CO2', 'reactivo_camara', 'chorro_O2eq_L', 'N2_burner_corr_L']
+# Moléculas de O2 que pide cada molécula de combustible (combustión completa). Convierte litros de combustible
+# a litros de O2 equivalente. src/lib/modelCore.js las lee de model.json.
+O2_PER_FUEL = {'Ethylene': 3.0, 'Ethane': 3.5, 'Propane': 5.0, 'Butane': 6.5}
 # Litros del quemador -> log1p(L / escala). La escala es el volumen a partir del cual "ya hay bastante gas".
-LOG_SCALE = {'O2_burner_corr_L': 0.05, 'N2_burner_corr_L': 0.05, 'fuel_burner_corr_L': 0.01}
-SIGNS = {'X_O2': +1, 'O2_burner_corr_L': +1, 'fuel_burner_corr_L': +1, 'N2_burner_corr_L': -1, 'X_CO2': -1}
+LOG_SCALE = {'chorro_O2eq_L': 0.05, 'N2_burner_corr_L': 0.05}
+SIGNS = {'reactivo_camara': +1, 'chorro_O2eq_L': +1, 'N2_burner_corr_L': -1, 'X_CO2': -1}
 C = 1.0   # regularizacion L2, igual que LogisticRegression(C=1)
 
 
 def r(x, n=6):
     return None if pd.isna(x) else round(float(x), n)
+
+
+def features(d):
+    """Columnas crudas del dataset -> FEATURES (antes de la escala logarítmica)."""
+    inv = d['is_inverse'].values == 1
+    f = pd.DataFrame({'is_inverse': inv.astype(float)})
+    for fuel in FUELS:
+        f['f_' + fuel.lower()] = (d['fuel'].values == fuel).astype(float)
+    f['P_psia'] = d['P_psia'].values
+    f['X_CO2'] = d['X_CO2'].values
+    f['reactivo_camara'] = np.where(inv, d['X_fuel'], d['X_O2'])
+    f['chorro_O2eq_L'] = np.where(inv, d['O2_burner_corr_L'], d['fuel_burner_corr_L'] * d['fuel'].map(O2_PER_FUEL))
+    f['N2_burner_corr_L'] = d['N2_burner_corr_L'].values
+    return f[FEATURES].values
 
 
 def transform(X):
@@ -91,6 +116,7 @@ def export_model(clf):
         'type': 'logistic',
         'features': FEATURES,
         'log_scale': [LOG_SCALE.get(f, 0) for f in FEATURES],   # 0 = sin transformar
+        'o2_per_fuel': O2_PER_FUEL,
         'mean': [float(v) for v in clf.scaler.mean_],
         'scale': [float(v) for v in clf.scaler.scale_],
         'coef': [float(v) for v in clf.coef_],
@@ -101,9 +127,7 @@ def export_model(clf):
 def main():
     d = pd.read_csv(CSV)
     d = d[d['fuel'].isin(FUELS)].reset_index(drop=True)
-    for f in FUELS:
-        d['f_' + f.lower()] = (d['fuel'] == f).astype(int)
-    X, y, g = transform(d[FEATURES].values), d['ignite'].values, d['session'].values
+    X, y, g = transform(features(d)), d['ignite'].values, d['session'].values
 
     oof = cv_predict(X, y, g)
     d['prob_cv'] = np.round(oof, 4)
@@ -122,7 +146,7 @@ def main():
 
     src = d['source'].values
     meta = {
-        'model': 'Regresión logística (litros del quemador en escala logarítmica, signos fijados por la física)',
+        'model': 'Regresión logística (O2 y combustible como reactivos equivalentes, litros del quemador en escala logarítmica, signos fijados por la física)',
         'signs': SIGNS,
         'features': FEATURES, 'fuels': FUELS,
         'cv': {'method': 'Leave-One-Session-Out (%d sesiones)' % d['session'].nunique(),

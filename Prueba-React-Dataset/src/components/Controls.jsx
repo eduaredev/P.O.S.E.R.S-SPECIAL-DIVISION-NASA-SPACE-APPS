@@ -1,11 +1,5 @@
 import { FUELS, FUEL_ES, VARS, META, comboKey } from '../lib/data.js';
 
-const PRESETS = [
-  { label: 'ISS: 14.7 psia, 21 % O2', P: 14.7, O2: 0.21 },
-  { label: 'Exploración: 10.2 psia, 26.5 % O2', P: 10.2, O2: 0.265 },
-  { label: 'Aire enriquecido: 14.7 psia, 35 % O2', P: 14.7, O2: 0.35 },
-];
-
 function SliderField({ v, params, onChange }) {
   const value = params[v.key];
   const rng = META.ranges[comboKey(params.fuel, params.inverse)]?.[v.row];
@@ -27,7 +21,7 @@ function SliderField({ v, params, onChange }) {
   );
 }
 
-export default function Controls({ params, onChange, onCombo, onTypical, onPreset }) {
+export default function Controls({ params, onChange, onCombo, onTypical }) {
   const inv = !!params.inverse;
   const pick = (keys) => keys.map((k) => VARS.find((v) => v.key === k));
   // Solo se muestran las variables que existen en ese tipo de llama; las demás valen 0.
@@ -51,12 +45,6 @@ export default function Controls({ params, onChange, onCombo, onTypical, onPrese
           <button type="button" aria-pressed={inv} onClick={() => onCombo(params.fuel, 1)}>Inversa</button>
         </div>
       </div>
-
-      {!inv && (
-        <div className="chips" aria-label="Escenarios rápidos">
-          {PRESETS.map((p) => <button key={p.label} type="button" className="chip" onClick={() => onPreset(p)}>{p.label}</button>)}
-        </div>
-      )}
 
       <h3 className="grp">Cámara</h3>
       <p className="hint tight">

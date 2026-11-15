@@ -14,7 +14,7 @@ export function Shape({ shape, color, size = 14 }) {
   );
 }
 
-function Ladder({ p, threshold }) {
+function Ladder({ p }) {
   const W = 600;
   const x = (v) => v * W;
   let start = 0;
@@ -30,7 +30,6 @@ function Ladder({ p, threshold }) {
             </g>
           );
         })}
-        <line x1={x(threshold)} x2={x(threshold)} y1="9" y2="29" stroke="var(--ink)" strokeWidth="1.5" strokeDasharray="3 2" />
         {p != null && (
           <>
             <polygon className="mark" points={`${x(p) - 7},1 ${x(p) + 7},1 ${x(p)},13`} fill="var(--ink)" />
@@ -47,7 +46,7 @@ const showRange = (key, lo, hi) => {
   return `${(lo * v.scale).toFixed(v.dec)} a ${(hi * v.scale).toFixed(v.dec)} ${v.unit}`;
 };
 
-export default function Result({ params, threshold, onThreshold, onClamp }) {
+export default function Result({ params, onClamp }) {
   const p = predict(params);
   const lv = levelOf(p);
   const block = blocker(params);
@@ -63,7 +62,6 @@ export default function Result({ params, threshold, onThreshold, onClamp }) {
   if (!chk.noData && near.far && !chk.out.length) warns.push('Esta combinación de valores no se parece a ninguna prueba real de este caso, aunque cada valor por separado esté en rango. Tómala con cautela.');
 
   const ls = !block ? levers(params, p).filter((l) => l.delta < -0.005).slice(0, 4) : [];
-  const alarm = !block && p >= threshold;
 
   return (
     <section className="panel" aria-live="polite">
@@ -83,23 +81,12 @@ export default function Result({ params, threshold, onThreshold, onClamp }) {
           </p>
         </div>
       </div>
-      <Ladder p={p} threshold={threshold} />
-      <div className="thresh">
-        <label htmlFor="th">Umbral de alarma <span className="val">{(threshold * 100).toFixed(0)} %</span></label>
-        <input id="th" type="range" min="0.05" max="0.95" step="0.05" value={threshold}
-          onChange={(e) => onThreshold(parseFloat(e.target.value))} />
-        <p className="hint tight">Es la línea punteada de la escala. Por encima de ese valor se muestra una alerta.</p>
-      </div>
+      <Ladder p={p} />
 
       {extrap && (
         <div className="rule" role="status">
           <b>Fuera de lo ensayado.</b> Si quieres una estimación respaldada por pruebas reales, lleva los valores al rango que NASA sí probó.{' '}
           <button type="button" className="btn small" style={{ marginLeft: 6 }} onClick={onClamp}>Llevar al rango ensayado</button>
-        </div>
-      )}
-      {alarm && (
-        <div className="alert" role="alert">
-          <b>Alerta preventiva.</b> El riesgo estimado supera tu umbral. Revisa las palancas de abajo antes de continuar.
         </div>
       )}
       {block && <div className="rule" role="status"><b>Regla física.</b> {BLOCK_TEXT[block]}</div>}

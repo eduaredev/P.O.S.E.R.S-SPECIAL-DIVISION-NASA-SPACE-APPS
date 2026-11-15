@@ -1,9 +1,8 @@
 {
- "model": "Regresión logística (litros del quemador en escala logarítmica, signos fijados por la física)",
+ "model": "Regresión logística (O2 y combustible como reactivos equivalentes, litros del quemador en escala logarítmica, signos fijados por la física)",
  "signs": {
-  "X_O2": 1,
-  "O2_burner_corr_L": 1,
-  "fuel_burner_corr_L": 1,
+  "reactivo_camara": 1,
+  "chorro_O2eq_L": 1,
   "N2_burner_corr_L": -1,
   "X_CO2": -1
  },
@@ -14,12 +13,10 @@
   "f_butane",
   "f_ethane",
   "P_psia",
-  "X_O2",
   "X_CO2",
-  "X_fuel",
-  "O2_burner_corr_L",
-  "N2_burner_corr_L",
-  "fuel_burner_corr_L"
+  "reactivo_camara",
+  "chorro_O2eq_L",
+  "N2_burner_corr_L"
  ],
  "fuels": [
   "Ethylene",
@@ -32,64 +29,60 @@
   "all": {
    "n": 697,
    "ignite_rate": 0.793,
-   "accuracy": 0.864,
+   "accuracy": 0.859,
    "majority_baseline": 0.793,
-   "auc": 0.901,
-   "brier": 0.098
+   "auc": 0.909,
+   "brier": 0.096
   },
   "PSI-159": {
    "n": 340,
    "ignite_rate": 0.656,
-   "accuracy": 0.794,
+   "accuracy": 0.785,
    "majority_baseline": 0.656,
-   "auc": 0.85
+   "auc": 0.863
   },
   "PSI-10": {
    "n": 357,
    "ignite_rate": 0.924,
    "accuracy": 0.93,
    "majority_baseline": 0.924,
-   "auc": 0.923
+   "auc": 0.936
   },
   "normal": {
    "n": 422,
    "ignite_rate": 0.803,
-   "accuracy": 0.877,
+   "accuracy": 0.858,
    "majority_baseline": 0.803,
-   "auc": 0.92
+   "auc": 0.924
   },
   "inverse": {
    "n": 275,
    "ignite_rate": 0.778,
-   "accuracy": 0.844,
+   "accuracy": 0.862,
    "majority_baseline": 0.778,
-   "auc": 0.858
+   "auc": 0.88
   }
  },
  "importance": {
-  "is_inverse": 0.0101,
-  "P_psia": 0.0319,
-  "X_O2": 0.0,
+  "is_inverse": 0.0383,
+  "P_psia": 0.0597,
   "X_CO2": 0.0,
-  "X_fuel": 0.0231,
-  "O2_burner_corr_L": 0.2644,
-  "N2_burner_corr_L": 0.0799,
-  "fuel_burner_corr_L": 0.4198,
-  "fuel": 0.1707
+  "reactivo_camara": 0.0032,
+  "chorro_O2eq_L": 0.4556,
+  "N2_burner_corr_L": 0.1244,
+  "fuel": 0.3188
  },
  "effects": {
-  "is_inverse": 0.0805,
-  "f_ethylene": 0.5994,
-  "f_propane": -0.1462,
-  "f_butane": -0.5335,
-  "f_ethane": -0.0766,
-  "P_psia": -0.2535,
-  "X_O2": 0.0,
+  "is_inverse": -0.218,
+  "f_ethylene": 0.8059,
+  "f_propane": -0.1799,
+  "f_butane": -0.7727,
+  "f_ethane": -0.0543,
+  "P_psia": -0.3394,
   "X_CO2": 0.0,
-  "X_fuel": 0.1837,
-  "O2_burner_corr_L": 2.0997,
-  "N2_burner_corr_L": -0.6346,
-  "fuel_burner_corr_L": 3.3336
+  "reactivo_camara": 0.0185,
+  "chorro_O2eq_L": 2.591,
+  "N2_burner_corr_L": -0.7073
  },
  "combos": [
   {

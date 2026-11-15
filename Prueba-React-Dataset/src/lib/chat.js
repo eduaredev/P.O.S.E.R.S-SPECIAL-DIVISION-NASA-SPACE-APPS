@@ -42,8 +42,9 @@ const CHANGES = [
 ];
 
 const LABEL = {
-  is_inverse: 'Llama inversa', P_psia: 'Presión', X_O2: 'O2 en cámara', X_CO2: 'CO2 en cámara', X_fuel: 'Combustible en cámara',
-  O2_burner_corr_L: 'O2 del quemador', N2_burner_corr_L: 'N2 del quemador', fuel_burner_corr_L: 'Combustible del quemador', fuel: 'Tipo de combustible',
+  is_inverse: 'Llama inversa', P_psia: 'Presión', X_CO2: 'CO2 en cámara', N2_burner_corr_L: 'N2 del quemador', fuel: 'Tipo de combustible',
+  chorro_O2eq_L: 'Chorro del quemador (combustible en normal, O2 en inversa)',
+  reactivo_camara: 'Reactivo en cámara (O2 en normal, combustible en inversa)',
 };
 
 /* ------------------------------------------------------------------ parseo */
@@ -263,7 +264,8 @@ export function answer(raw, ctx = {}) {
     return reply([
       { t: 'p', text: 'Peso de cada variable en el modelo (coeficientes con las variables en la misma escala):' },
       { t: 'table', head: ['Variable', 'Peso', 'Al aumentar'], rows: imp.map(([k, v]) => [LABEL[k] || k, pct(v, 0), dir(k)]) },
-      { t: 'p', text: 'El O2 y el CO2 de la cámara quedan en cero: la física dice que más O2 ayuda y el CO2 (inerte) estorba, pero en estos datos, una vez considerado el resto, no se ve ese efecto. Se fijaron los signos para que el modelo no aprenda tendencias al revés.' },
+      { t: 'p', text: 'La llama normal y la inversa son espejo: el quemador suelta un reactivo y la cámara tiene el otro. Por eso el O2 y el combustible no tienen pesos separados, sino uno por papel. El chorro se mide en litros de O2 equivalente: 1 L de butano pide 6.5 L de O2, así que cuenta como 6.5 L.' },
+      { t: 'p', text: 'Lo que hay en la cámara casi no mueve el resultado y el CO2 queda en cero: la física dice que más reactivo ayuda y el CO2 (inerte) estorba, pero en estos datos, una vez considerado el chorro, no se ve ese efecto. Se fijaron los signos para que el modelo no aprenda tendencias al revés.' },
       used('resumen_dataset'),
     ]);
   }

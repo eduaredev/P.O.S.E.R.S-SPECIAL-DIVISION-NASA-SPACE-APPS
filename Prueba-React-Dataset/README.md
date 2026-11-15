@@ -2,7 +2,7 @@
 
 Dos secciones:
 - **Asistente**: tabla filtrable de las 697 pruebas (descarga CSV) y un asistente local en español.
-- **Riesgo de incendio**: escenario ajustable, probabilidad de ignición con nivel de riesgo y umbral de alarma,
+- **Riesgo de incendio**: escenario ajustable, probabilidad de ignición con nivel de riesgo,
   pruebas reales más parecidas, palancas de prevención y mapa de riesgo de dos parámetros.
 
 ## Ejecutar
@@ -26,11 +26,16 @@ viene partida por periodos (2019 y 2021-2022); la de 2019 trae las únicas prueb
 `train_export.py` entrena una **regresión logística**, la valida dejando fuera cada día de pruebas y exporta los
 coeficientes a JSON. `src/lib/modelCore.js` la evalúa en el navegador (coincide con Python a 1e-16).
 
+- La llama normal y la inversa son espejo (el quemador suelta un reactivo y la cámara tiene el otro), así que el O2 y
+  el combustible no tienen coeficientes separados sino uno por papel: `chorro_O2eq_L` (lo que suelta el quemador, en
+  litros de O2 equivalente: el combustible se multiplica por el O2 que pide cada molécula, 3 a 6.5) y
+  `reactivo_camara` (O2 de la cámara en llama normal, combustible en la inversa). Frente a separarlos, la AUC sube de
+  0.901 a 0.909 y en llama inversa de 0.858 a 0.880.
 - Los litros del quemador entran en escala logarítmica (los primeros mililitros importan más que los últimos).
 - Los signos de algunos coeficientes están fijados por la física (`SIGNS`): más O2 o más combustible no pueden bajar la
   probabilidad y el N2 o el CO2 no pueden subirla. Sin esto el modelo aprendía tendencias al revés por el diseño del
-  experimento (por ejemplo, el CO2 se acumula a lo largo del día). En estos datos el O2 y el CO2 de la cámara quedan sin
-  efecto. Cuesta ~0.01 de AUC; para quitarlo, `SIGNS = {}`.
+  experimento (por ejemplo, el CO2 se acumula a lo largo del día). En estos datos el CO2 queda sin efecto y el
+  reactivo de la cámara casi sin efecto. Cuesta ~0.01 de AUC; para quitarlo, `SIGNS = {}`.
 - Se eligió sobre el gradient boosting que había antes porque la app sirve para explorar: la probabilidad cambia de forma
   continua al mover un control y sigue una tendencia fuera de lo ensayado (los árboles dan escalones y se quedan planos
   en el borde). En validación por día predicen casi igual.
@@ -41,8 +46,8 @@ Antes de consultar el modelo se aplican dos reglas: sin combustible (quemador y 
 se validaron con los datos reales (bloquean 5 pruebas y ninguna encendió).
 
 ## Cómo leer los resultados
-- AUC 0.85 y exactitud 79 % en PSI-159 (frente a 66 % de adivinar siempre "enciende"). PSI-10 enciende el 92 %, por eso
-  el AUC global (0.90) luce mejor de lo que es. Las cifras de la app salen de `src/data/meta.json` y se actualizan solas.
+- AUC 0.86 y exactitud 79 % en PSI-159 (frente a 66 % de adivinar siempre "enciende"). PSI-10 enciende el 92 %, por eso
+  el AUC global (0.91) luce mejor de lo que es. Las cifras de la app salen de `src/data/meta.json` y se actualizan solas.
 - Es una alerta de apoyo: el modelo aprendió correlaciones de pruebas con encendedor forzado en una cámara pequeña,
   no física de combustión ni riesgo en una cabina.
 - Fuera de lo ensayado la app **sí** da el porcentaje, marcado como "Extrapolación": es la tendencia del modelo, no un
